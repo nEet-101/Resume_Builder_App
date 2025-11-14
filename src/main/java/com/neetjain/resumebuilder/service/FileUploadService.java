@@ -1,0 +1,31 @@
+package com.neetjain.resumebuilder.service;
+
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import com.neetjain.resumebuilder.config.CloudinaryConfig;
+import jakarta.mail.Multipart;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+
+public class FileUploadService {
+
+    //Injecting cloudinary
+    private final Cloudinary cloudinary;
+
+    public Map<String,String> uploadSingleImage(MultipartFile file) throws IOException {
+        Map<String, Object> imageUploadResult = cloudinary.uploader().upload(file.getBytes(),ObjectUtils.asMap("resource_type","image"));
+        log.info("Inside FileUploadService - uploadSingleImage() {}",imageUploadResult.get("secure_url").toString());
+        return Map.of("imageUrl",imageUploadResult.get("secure_url").toString());
+
+    }
+
+}
