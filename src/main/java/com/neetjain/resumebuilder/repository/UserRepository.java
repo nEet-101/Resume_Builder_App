@@ -11,4 +11,6 @@ public interface UserRepository extends MongoRepository<User, String> {
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(@Email(message = "Email should be valid") @NotBlank(message = "Email is required") String email);
+
+    Optional<User> findByVerificationToken(String verificationToken);
 }

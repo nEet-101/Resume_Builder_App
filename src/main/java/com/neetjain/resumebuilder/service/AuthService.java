@@ -26,7 +26,7 @@ public class AuthService {
 
 
     public AuthResponse register(RegisterRequest request) {
-      log.info("Inside AuthSerice: register() {}",request);
+      log.info("Inside AuthService: register() {}",request);
 
       if(userRepository.existsByEmail(request.getEmail())) {
           throw new ResourceExistsException("User already exits with the email");
@@ -41,6 +41,7 @@ public class AuthService {
     }
 
     private void sendVerificationEmail(User newUser) {
+        log.info("Inside AuthService - sendVerificationEmail(): {}", newUser);
         try {
             String link = appBaseUrl+"/api/auth/verify-email?token="+newUser.getVerificationToken();
             String html = "<div style='font-family:sand-sarif'>" +
@@ -54,6 +55,7 @@ public class AuthService {
                     "</div>";
             emailService.sendHtmlEmail(newUser.getEmail(),"Verify your email",html);
         } catch (Exception e) {
+            log.error("Exception occured at sendVerificationEmail(): {}", e.getMessage());
             throw new RuntimeException("Failed to send varification email: "+e.getMessage());
         }
     }
@@ -82,6 +84,22 @@ public class AuthService {
                 .verificationToken(UUID.randomUUID().toString())
                 .verificationExpires(LocalDateTime.now().plusHours(24))
                 .build();
+    }
+
+    //Validating token
+    public void verifyEmail(String token){
+        log.info("Inside AuthService: verifyEmail() : {}", token);
+        User user = userRepository.findByVerificationToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid or expire token"));
+
+        if(user.getVerificationExpires() != null && user.getVerificationExpires().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Verification token has expired. Please request new one.");
+        }
+
+        user.setEmailVerified(true);
+        user.setVerificationToken(null);
+        user.setVerificationExpires(null);
+        userRepository.save(user);
     }
 
 }
