@@ -7,6 +7,7 @@ import com.neetjain.resumebuilder.exceptions.ResourceExistsException;
 import com.neetjain.resumebuilder.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,12 @@ import java.util.UUID;
 @Slf4j
 public class AuthService {
     public final UserRepository userRepository;
+    public final EmailService emailService;
+
+    @Value("${app.base.url:http://localhost:8082}")
+    private String appBaseUrl;
+
+
     public AuthResponse register(RegisterRequest request) {
       log.info("Inside AuthSerice: register() {}",request);
 
@@ -27,10 +34,30 @@ public class AuthService {
       User newUser = toDocument(request);
       userRepository.save(newUser);
 
-//      TODO : send verification email
+//      Send verification email
+        sendVerificationEmail(newUser);
 
         return toResponse(newUser);
     }
+
+    private void sendVerificationEmail(User newUser) {
+        try {
+            String link = appBaseUrl+"/api/auth/verify-email?token="+newUser.getVerificationToken();
+            String html = "<div style='font-family:sand-sarif'>" +
+                    "<h2>Verify your email</h2>" +
+                    "<p>Hi " +newUser.getName() + " , please confirm your email to activate your account </p>" +
+                    "<p><a href='" + link
+                    + "' style='display:inline-block;padding:10px 16px;background-color:#6366f1;color:#fff;border-radius:6px;text-decoration:none'>Verify Email</a></p>"
+                    +
+                    "<p>Or copy this link: " + link + "</p>" +
+                    "<p>This link expires in 24 hours.</p>" +
+                    "</div>";
+            emailService.sendHtmlEmail(newUser.getEmail(),"Verify your email",html);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send varification email: "+e.getMessage());
+        }
+    }
+
     private AuthResponse toResponse(User newUser) {
         return AuthResponse.builder()
                 .id(newUser.getId())
