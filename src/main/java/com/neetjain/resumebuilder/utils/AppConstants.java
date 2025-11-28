@@ -1,4 +1,4 @@
-package utils;
+package com.neetjain.resumebuilder.utils;
 
 public class AppConstants {
     public static final String AUTH_CONTROLLER = "/api/auth";
